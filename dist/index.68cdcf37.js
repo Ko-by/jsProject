@@ -524,38 +524,56 @@ const ajax = new XMLHttpRequest();
 const content = document.createElement('div');
 const newsURL = 'http://api.hnpwa.com/v0/news/1.json';
 const contentURL = 'https://api.hnpwa.com/v0/item/@id.json';
-ajax.open('GET', newsURL, false);
-ajax.send();
-const newsFeed = JSON.parse(ajax.response);
-const ul = document.createElement('ul');
-window.addEventListener('hashchange', function() {
-    console.log(location.hash);
-    const id = location.hash.substr(1);
-    console.log(id);
-    ajax.open('GET', contentURL.replace('@id', id), false);
+const store = {
+    currentPage: 1
+};
+function getData(url) {
+    ajax.open('GET', url, false);
     ajax.send();
-    const newsContent = JSON.parse(ajax.response);
-    const title = document.createElement('h1');
-    title.innerHTML = newsContent.title;
-    content.appendChild(title);
-    console.log(newsContent);
-});
-for(let i = 0; i < 10; i++){
-    const div = document.createElement('div');
-    const li = document.createElement('li');
-    const a = document.createElement('a');
-    div.innerHTML = `
-                    <li>
-                        <a href="#${newsFeed[i].id}">
-                            ${newsFeed[i].title} (${newsFeed[i].comments_count})
-                        </a>
-                    </li>
-                    `;
-    // ul.appendChild(div.children[0]);
-    ul.appendChild(div.firstElementChild);
+    return JSON.parse(ajax.response);
 }
-container.appendChild(ul);
-container.appendChild(content);
+function newsFeed() {
+    const newsFeed1 = getData(newsURL);
+    const newsList = [];
+    const idCount = 0;
+    newsList.push('<ul>');
+    for(let i = (store.currentPage - 1) * 10; i < store.currentPage * 10; i++)newsList.push(`
+            <li>
+                <a href="#/show/${newsFeed1[i].id}">
+                    ${newsFeed1[i].title} (${newsFeed1[i].comments_count})
+                </a>
+            </li>
+        `);
+    newsList.push('</ul>');
+    newsList.push(`
+        <div>
+            <a href="#/page/${store.currentPage > 1 ? store.currentPage - 1 : 1}">이전 페이지</a>  
+            <a href="#/page/${store.currentPage + 1}">다음 페이지</a>  
+        </div>
+    `);
+    container.innerHTML = newsList.join('');
+}
+function newsDetail() {
+    const id = location.hash.substr(7);
+    const newsContent = getData(contentURL.replace('@id', id));
+    container.innerHTML = `
+        <h1>${newsContent.title}</h1>
+        
+        <div>
+            <a href="/page/${store.currentPage}">목록으로</a>
+        </div>
+    `;
+}
+function router() {
+    const routePath = location.hash;
+    if (routePath === '') newsFeed();
+    else if (routePath.indexOf('#/page/') >= 0) {
+        store.currentPage = Number(routePath.substr(7));
+        newsFeed();
+    } else newsDetail();
+}
+window.addEventListener('hashchange', router);
+router();
 
 },{}]},["7PdXl","ffWvP"], "ffWvP", "parcelRequire94c2")
 
